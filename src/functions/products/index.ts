@@ -20,7 +20,7 @@ export const getProductsById = {
   events: [
     {
       http: {
-        method: 'post',
+        method: 'get',
         path: 'products/{id}',
         cors: {
           origin: '*'
