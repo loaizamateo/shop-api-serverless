@@ -9,6 +9,12 @@ export const getProductsList = {
         path: 'products',
         cors: {
           origin: '*'
+        },
+        responses: {
+          '200': {
+            description: 'Success response',
+            bodyType: 'Product'
+          }
         }
       },
     },
@@ -24,6 +30,12 @@ export const getProductsById = {
         path: 'products/{id}',
         cors: {
           origin: '*'
+        },
+        responses: {
+          '200': {
+            description: 'Success response',
+            bodyType: 'Product'
+          }
         }
       },
     },

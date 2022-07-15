@@ -5,7 +5,7 @@ import {getProductsList, getProductsById} from '@functions/products';
 const serverlessConfiguration: AWS = {
   service: 'product-service',
   frameworkVersion: '3',
-  plugins: ['serverless-esbuild'],
+  plugins: ['serverless-auto-swagger', 'serverless-offline','serverless-esbuild'],
   provider: {
     name: 'aws',
     runtime: 'nodejs14.x',
@@ -25,6 +25,9 @@ const serverlessConfiguration: AWS = {
   },
   package: { individually: true },
   custom: {
+    autoswagger:{
+      useStage: true
+    },
     esbuild: {
       bundle: true,
       minify: false,
@@ -34,7 +37,7 @@ const serverlessConfiguration: AWS = {
       define: { 'require.resolve': undefined },
       platform: 'node',
       concurrency: 10,
-    },
+    }
   },
 };
 
