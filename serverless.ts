@@ -1,11 +1,17 @@
 import type { AWS } from '@serverless/typescript';
 
-import {getProductsList, getProductsById} from '@functions/products';
+import { getProductsList, getProductsById } from '@functions/products';
 
 const serverlessConfiguration: AWS = {
   service: 'product-service',
+  useDotenv: true,
   frameworkVersion: '3',
-  plugins: ['serverless-auto-swagger', 'serverless-offline','serverless-esbuild'],
+  plugins: [
+    'serverless-auto-swagger',
+    'serverless-offline',
+    'serverless-esbuild',
+    'serverless-dotenv-plugin'
+  ],
   provider: {
     name: 'aws',
     runtime: 'nodejs14.x',
@@ -19,20 +25,20 @@ const serverlessConfiguration: AWS = {
     },
   },
   // import the function via paths
-  functions: { 
+  functions: {
     getProductsList,
     getProductsById
   },
   package: { individually: true },
   custom: {
-    autoswagger:{
+    autoswagger: {
       useStage: true
     },
     esbuild: {
       bundle: true,
       minify: false,
       sourcemap: true,
-      exclude: ['aws-sdk'],
+      exclude: ['aws-sdk', 'pg-native'],
       target: 'node14',
       define: { 'require.resolve': undefined },
       platform: 'node',
