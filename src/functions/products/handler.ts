@@ -1,9 +1,26 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { formatErrorResponse, formatJSONResponse } from '@libs/api-gateway';
+import { APIGatewayEvent, APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { formatErrorResponse, formatJSONResponse, ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { middyfy } from '@libs/lambda';
-import cors from '@middy/http-cors';
 import { HTTPError } from "src/errors/http-error.class";
-import { getProducts, getProductById } from '../../services/products';
+import { createProduct, getProducts, getProductById } from '../../services/products';
+import { Product } from "src/types/api-types";
+import CreateProduct from "src/dtos/CreateProductDto";
+import schema from "./schema";
+
+const main: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event): Promise<APIGatewayProxyResult> => {
+  try {
+    const product = await createProduct(event.body as unknown as Product);
+    return formatJSONResponse(product);
+  } catch (e) {
+    if (e instanceof HTTPError) {
+      return formatErrorResponse(e.statusCode, e.message);
+    }
+
+    return formatErrorResponse(500, `Failed to create product: ${e.message}`);
+  }
+};
+
+export const createProducts = middyfy(main);
 
 export const getProductsList = middyfy(async (): Promise<APIGatewayProxyResult> => {
   try {
@@ -18,7 +35,7 @@ export const getProductsList = middyfy(async (): Promise<APIGatewayProxyResult> 
 
     return formatErrorResponse(500, `Failed to get products: ${e.message}`);
   }
-}).use(cors());
+})
 
 export const getProductsById = middyfy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -32,7 +49,7 @@ export const getProductsById = middyfy(async (event: APIGatewayProxyEvent): Prom
     if (!product) {
       throw new HTTPError(404, 'Product not found');
     }
-    return formatJSONResponse(product[0]);
+    return formatJSONResponse(product);
   } catch (error) {
     if (error instanceof HTTPError) {
       return formatErrorResponse(error.statusCode, error.message);
@@ -40,4 +57,4 @@ export const getProductsById = middyfy(async (event: APIGatewayProxyEvent): Prom
 
     return formatErrorResponse(500, error.message);
   }
-}).use(cors());
+})
