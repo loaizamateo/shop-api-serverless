@@ -4,10 +4,10 @@ import { middyfy } from '@libs/lambda';
 import { HTTPError } from "src/errors/http-error.class";
 import { createProduct, getProducts, getProductById } from '../../services/products';
 import { Product } from "src/types/api-types";
-import CreateProduct from "src/dtos/CreateProductDto";
 import schema from "./schema";
 
 const main: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event): Promise<APIGatewayProxyResult> => {
+  console.log('createProducts', event);
   try {
     const product = await createProduct(event.body as unknown as Product);
     return formatJSONResponse(product);
@@ -22,11 +22,10 @@ const main: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event): P
 
 export const createProducts = middyfy(main);
 
-export const getProductsList = middyfy(async (): Promise<APIGatewayProxyResult> => {
+export const getProductsList = middyfy(async (event): Promise<APIGatewayProxyResult> => {
+  console.log('getProductsList', event);
   try {
-
     const products = await getProducts();
-
     return formatJSONResponse(products);
   } catch (e) {
     if (e instanceof HTTPError) {
@@ -38,6 +37,7 @@ export const getProductsList = middyfy(async (): Promise<APIGatewayProxyResult> 
 })
 
 export const getProductsById = middyfy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  console.log('getProductsById', event);
   try {
     const id = event.pathParameters.id;
     if (!id) {
