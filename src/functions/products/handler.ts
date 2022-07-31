@@ -8,7 +8,7 @@ import { Product } from "src/types/api-types";
 export const createProducts = middyfy(async (event): Promise<APIGatewayProxyResult> => {
   console.log('createProducts', event);
   try {
-    const { title, description, price, count } = event;
+    const { title, description, price, count } = event.body;
     if (!title)
       throw new HTTPError(400, 'title is missing');
     if (!description)
@@ -18,7 +18,7 @@ export const createProducts = middyfy(async (event): Promise<APIGatewayProxyResu
     if (!count)
       throw new HTTPError(400, 'count is missing');
 
-    const product = await createProduct(event as unknown as Product);
+    const product = await createProduct(event.body as unknown as Product);
     return formatJSONResponse(product);
   } catch (e) {
     if (e instanceof HTTPError) {
