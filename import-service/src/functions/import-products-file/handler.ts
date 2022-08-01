@@ -1,36 +1,35 @@
-import { formatJSONResponse, ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
+import { formatJSONResponse } from '@libs/api-gateway';
 import { middyfy } from '@libs/lambda';
+import { APIGatewayProxyEvent } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-import { extractFile } from 'src/utils';
-import schema from './schema';
 require('dotenv').config({ path: '../../.env' });
-const BUCKET = process.env.BUCKET_NAME;
 
-const importProductsFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
+const importProductsFile = async (event: APIGatewayProxyEvent) => {
 
-  const { name } = event.queryStringParameters;
+  const s3 = new S3({ region: process.env.REGION });
 
-  const s3 = new S3();
+  if (!event.queryStringParameters.name) {
+    return {
+      body: 'name its required'
+    }
+  }
+
+  const params = {
+    Bucket: process.env.BUCKET_NAME,
+    Key: `uploaded/${event.queryStringParameters.name}`,
+    Expires: 3600,
+    ContentType: 'text/csv'
+  };
 
   try {
-    const { filename, data } = extractFile(event)
-    const s3Params = {
-      Bucket: process.env.BUCKET_NAME,
-      Key: filename,
-      Prefix: 'uploaded/',
-      Delimiter: '/',
-      ACL: 'public-read',
-      Body: data
-    };
-
-    await s3.putObject(s3Params).promise();
-
-    return formatJSONResponse({ link: `https://${BUCKET}.s3.amazonaws.com/${filename}` });
-  } catch (err) {
+    const url = await s3.getSignedUrl('putObject', params);
+    return formatJSONResponse({ link: url});
+  } catch (error) {
+    console.error('getSignedUrl failed', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: err.stack })
-    }
+      body: 'name its required'
+    };
   }
 
 };

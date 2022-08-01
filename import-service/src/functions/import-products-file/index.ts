@@ -1,4 +1,3 @@
-import schema from './schema';
 import { handlerPath } from '@libs/handler-resolver';
 
 export default {
@@ -7,10 +6,12 @@ export default {
     {
       http: {
         method: 'get',
-        path: 'import',
+        path: '/import',
         request: {
-          schemas: {
-            'application/json': schema,
+          parameters: {
+            querystrings: {
+              name: true
+            }
           },
         },
       },

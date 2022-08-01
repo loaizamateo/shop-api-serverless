@@ -23,11 +23,6 @@ const serverlessConfiguration: AWS = {
       },
       {
         Effect: 'Allow',
-        Action: 's3:PutObject',
-        Resource: 'arn:aws:s3:::${env:BUCKET_NAME}/*'
-      },
-      {
-        Effect: 'Allow',
         Action: 's3:*',
         Resource: 'arn:aws:s3:::${env:BUCKET_NAME}/*'
       }
