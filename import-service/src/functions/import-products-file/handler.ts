@@ -23,7 +23,7 @@ const importProductsFile = async (event: APIGatewayProxyEvent) => {
 
   try {
     const url = await s3.getSignedUrl('putObject', params);
-    return formatJSONResponse({ link: url});
+    return formatJSONResponse(url);
   } catch (error) {
     console.error('getSignedUrl failed', error);
     return {
