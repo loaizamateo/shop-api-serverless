@@ -1,6 +1,6 @@
 import type { AWS } from '@serverless/typescript';
 
-import { createProducts, getProductsList, getProductsById } from '@functions/products';
+import { createProducts, getProductsList, getProductsById, catalogBatchProcess } from '@functions/products';
 
 const serverlessConfiguration: AWS = {
   service: 'product-service',
@@ -15,6 +15,24 @@ const serverlessConfiguration: AWS = {
   provider: {
     name: 'aws',
     runtime: 'nodejs14.x',
+    iamRoleStatements: [
+      {
+        Effect: "Allow",
+        Action: ["sqs:*"],
+        Resource: [
+          {
+            "Fn::GetAtt": ["catalogItemsQueue", "Arn"],
+          },
+        ],
+      },
+      {
+        Effect: "Allow",
+        Action: ["sns:*"],
+        Resource: [
+          `arn:aws:sns:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
+        ],
+      },
+    ],
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true
@@ -28,7 +46,43 @@ const serverlessConfiguration: AWS = {
   functions: {
     createProducts,
     getProductsList,
-    getProductsById
+    getProductsById,
+    catalogBatchProcess
+  },
+  resources: {
+    Resources: {
+      catalogItemsQueue: {
+        Type: "AWS::SQS::Queue",
+        Properties: {
+          QueueName: process.env.AWS_CLIENT_SQS_CATALOG_ITEMS,
+        },
+      },
+      createProductTopic: {
+        Type: "AWS::SNS::Topic",
+        Properties: {
+          TopicName: process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS,
+        },
+      },
+      sendMailSub: {
+        Type: "AWS::SNS::Subscription",
+        Properties: {
+          Protocol: "email",
+          TopicArn: `arn:aws:sns:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
+          Endpoint: process.env.EMAIL_CREATED_PRODUCT,
+        },
+      },
+      sendMailAltSub: {
+        Type: "AWS::SNS::Subscription",
+        Properties: {
+          Protocol: "email",
+          TopicArn: `arn:aws:sns:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
+          Endpoint: process.env.EMAIL_CREATED_PRODUCT2,
+          FilterPolicy: {
+            totalPrice: [{ numeric: ["<", 200] }],
+          },
+        },
+      },
+    },
   },
   package: { individually: true },
   custom: {
@@ -37,7 +91,7 @@ const serverlessConfiguration: AWS = {
     },
     esbuild: {
       bundle: true,
-      minify: false,
+      minify: true,
       sourcemap: true,
       exclude: ['aws-sdk', 'pg-native'],
       target: 'node14',

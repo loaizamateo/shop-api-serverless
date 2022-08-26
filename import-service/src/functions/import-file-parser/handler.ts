@@ -1,57 +1,77 @@
 import { middyfy } from "@libs/lambda";
-import { S3 } from 'aws-sdk';
-import type { S3Event, S3EventRecord } from "aws-lambda";
+import {
+  CopyObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import {
+  SQSClient,
+  SendMessageCommand,
+  GetQueueUrlCommand,
+} from "@aws-sdk/client-sqs";
+import type { S3Event } from "aws-lambda";
 import { formatJSONResponse } from "@libs/api-gateway";
 const csv = require('csv-parser')
 
 const importFileParser = async (event: S3Event) => {
-  const s3 = new S3({ region: process.env.REGION });
+  console.log(event);
 
-  const promises: Promise<any>[] = event.Records.map((record: S3EventRecord) => {
-    return new Promise((resolve, reject) => {
-      const params = {
-        Bucket: process.env.BUCKET_NAME,
-        Key: record.s3.object.key
-      };
+  const region = process.env.AWS_CLIENT_REGION;
+  const file = event.Records[0];
+  const client = new S3Client({ region });
+  const contentParsed = [];
 
-      const results = [];
+  // Getting file from S3
+  const fileStream = await client.send(
+    new GetObjectCommand({
+      Bucket: file.s3.bucket.name,
+      Key: file.s3.object.key,
+    })
+  );
 
-      s3.getObject(params)
-        .createReadStream()
-        .pipe(csv())
-        .on('data', (data) => {
-          results.push(data);
+  // Logging and send it to sqs for parse it
+  fileStream.Body.pipe(csv())
+    .on("data", (data) => contentParsed.push(data))
+    .on("end", async () => {
+      const clientSqs = new SQSClient({ region });
+
+      // Getting url of the current queue
+      const queueUrl = await clientSqs.send(
+        new GetQueueUrlCommand({
+          QueueName: process.env.AWS_CLIENT_SQS_CATALOG_ITEMS,
         })
-        .on('error', (error) => {
-          reject(error);
+      );
+
+      await clientSqs.send(
+        new SendMessageCommand({
+          QueueUrl: queueUrl.QueueUrl,
+          MessageBody: JSON.stringify(contentParsed),
         })
-        .on('end', () => {
-          resolve(results);
-        });
+      );
     });
+
+  // Moving to parsed folder
+  await client.send(
+    new CopyObjectCommand({
+      Bucket: file.s3.bucket.name,
+      CopySource: `${file.s3.bucket.name}/${file.s3.object.key}`,
+      Key: file.s3.object.key.replace("uploaded/", "parsed/"),
+    })
+  );
+
+  // Delete old object
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: file.s3.bucket.name,
+      Key: file.s3.object.key,
+    })
+  );
+
+  return formatJSONResponse({
+    data: event.Records,
+    // event,
   });
-
-  try {
-    const resolvedResults = await Promise.all(promises);
-    console.log(resolvedResults);
-  } catch (error) {
-    console.error(error);
-  }
-
-  for (const record of event.Records) {
-    await s3.copyObject({
-      Bucket: process.env.BUCKET_NAME,
-      CopySource: `${process.env.BUCKET_NAME}/${record.s3.object.key}`,
-      Key: record.s3.object.key.replace('uploaded', 'parsed')
-    }).promise();
-
-    await s3.deleteObject({
-      Bucket: process.env.BUCKET_NAME,
-      Key: record.s3.object.key
-    }).promise();
-  }
-
-  return formatJSONResponse('success');
 }
 
 export const main = middyfy(importFileParser);

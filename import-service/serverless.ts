@@ -26,6 +26,14 @@ const serverlessConfiguration: AWS = {
         Effect: 'Allow',
         Action: 's3:*',
         Resource: 'arn:aws:s3:::${env:BUCKET_NAME}/*'
+      },
+      {
+        Effect: "Allow",
+        Action: ["sqs:GetQueueUrl", "sqs:SendMessage"],
+        Resource: [
+          `arn:aws:sqs:${process.env.AWS_CLIENT_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SQS_CATALOG_ITEMS
+        }`,
+      ]
       }
     ],
     apiGateway: {
