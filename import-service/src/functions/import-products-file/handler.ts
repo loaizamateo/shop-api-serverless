@@ -6,7 +6,7 @@ require('dotenv').config({ path: '../../.env' });
 
 const importProductsFile = async (event: APIGatewayProxyEvent) => {
 
-  const s3 = new S3({ region: process.env.REGION });
+  const s3 = new S3({ region: process.env.AWS_CLIENT_REGION });
 
   if (!event.queryStringParameters.name) {
     return {
