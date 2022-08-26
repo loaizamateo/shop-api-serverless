@@ -29,7 +29,7 @@ const serverlessConfiguration: AWS = {
         Effect: "Allow",
         Action: ["sns:*"],
         Resource: [
-          `arn:aws:sns:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
+          `arn:aws:sns:${process.env.AWS_CLIENT_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
         ],
       },
     ],
@@ -67,7 +67,7 @@ const serverlessConfiguration: AWS = {
         Type: "AWS::SNS::Subscription",
         Properties: {
           Protocol: "email",
-          TopicArn: `arn:aws:sns:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
+          TopicArn: `arn:aws:sns:${process.env.AWS_CLIENT_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
           Endpoint: process.env.EMAIL_CREATED_PRODUCT,
         },
       },
@@ -75,7 +75,7 @@ const serverlessConfiguration: AWS = {
         Type: "AWS::SNS::Subscription",
         Properties: {
           Protocol: "email",
-          TopicArn: `arn:aws:sns:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
+          TopicArn: `arn:aws:sns:${process.env.AWS_CLIENT_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
           Endpoint: process.env.EMAIL_CREATED_PRODUCT2,
           FilterPolicy: {
             totalPrice: [{ numeric: ["<", 200] }],

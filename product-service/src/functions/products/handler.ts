@@ -13,7 +13,7 @@ import {
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
 export const catalogBatchProcess = async (event) => {
-  const region = process.env.AWS_REGION;
+  const region = process.env.AWS_CLIENT_REGION;
   console.log(event);
 
   const message = event.Records[0];
@@ -82,7 +82,7 @@ export const catalogBatchProcess = async (event) => {
 
       await clientSns.send(
         new PublishCommand({
-          TopicArn: `arn:aws:sns:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
+          TopicArn: `arn:aws:sns:${process.env.AWS_CLIENT_REGION}:${process.env.AWS_ACCOUNT_ID}:${process.env.AWS_CLIENT_SNS_CREATED_PRODUCTS}`,
           Subject: "New products were added to the database",
           Message: `Hi! New products have been added to the store! \n ${JSON.stringify(
             results
